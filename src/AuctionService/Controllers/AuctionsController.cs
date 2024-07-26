@@ -7,6 +7,10 @@ using AuctionService.Entities;
 using AutoMapper;
 using AutoMapper.QueryableExtensions;
 
+using Contracts;
+
+using MassTransit;
+
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -14,10 +18,11 @@ namespace AuctionService.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class AuctionsController(AuctionDbContext context, IMapper mapper) : ControllerBase
+public class AuctionsController(AuctionDbContext context, IMapper mapper, IPublishEndpoint publishEndpoint) : ControllerBase
 {
     private readonly AuctionDbContext _context = context;
     private readonly IMapper _mapper = mapper;
+    private readonly IPublishEndpoint _publishEndpoint = publishEndpoint;
 
     [HttpGet]
     public async Task<ActionResult<List<AuctionDto>>> GetAuctions(string date)
@@ -56,6 +61,10 @@ public class AuctionsController(AuctionDbContext context, IMapper mapper) : Cont
 
         _context.Auctions.Add(auction);
 
+        var newAuction = _mapper.Map<AuctionDto>(auction);
+
+        await _publishEndpoint.Publish(_mapper.Map<AuctionCreated>(newAuction));
+
         var result = await _context.SaveChangesAsync() > 0;
 
         return !result
@@ -78,6 +87,8 @@ public class AuctionsController(AuctionDbContext context, IMapper mapper) : Cont
         auction.Item.Mileage = updateAuctionDto.Mileage > 0 ? updateAuctionDto.Mileage : auction.Item.Mileage;
         auction.Item.Year = updateAuctionDto.Year > 0 ? updateAuctionDto.Year : auction.Item.Year;
 
+        await _publishEndpoint.Publish(_mapper.Map<AuctionUpdated>(auction));
+
         var result = await _context.SaveChangesAsync() > 0;
 
         return !result
@@ -95,6 +106,8 @@ public class AuctionsController(AuctionDbContext context, IMapper mapper) : Cont
         if (auction == null) return NotFound();
 
         _context.Auctions.Remove(auction);
+
+        await _publishEndpoint.Publish(new AuctionDeleted { Id = id });
 
         var result = await _context.SaveChangesAsync() > 0;
 

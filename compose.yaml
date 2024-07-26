@@ -6,7 +6,7 @@ services:
     ports:
       - 5432:5432
     volumes:
-      - ./docker/pg_data:/var/lib/postgresql/data
+      - /var/lib/postgresql/data
   mongodb:
     image: mongo:latest
     environment:
@@ -15,5 +15,10 @@ services:
     ports:
       - 27017:27017
     volumes:
-      - ./docker/mongo_data:/data/db
+      - /data/db
     restart: unless-stopped
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    ports:
+      - 5672:5672
+      - 15672:15672

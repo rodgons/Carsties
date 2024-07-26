@@ -1,11 +1,9 @@
-﻿using System.Text.Json;
-
-using Microsoft.OpenApi.Writers;
-
-using MongoDB.Driver;
+﻿using MongoDB.Driver;
 using MongoDB.Entities;
 
-namespace SearchService.Models;
+using SearchService.Models;
+
+namespace SearchService.Data;
 
 public static class DbInitializer
 {
